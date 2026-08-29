@@ -371,6 +371,13 @@ def _render_table_block(table_block: list[str]) -> str:
             bullets.append(f"• {header}: {value}")
 
         group_lines = [f"**{heading}**", *bullets]
+        # If the heading cell already carried its own **bold** markers
+        # (e.g. a markdown table whose first cell was written as **X**),
+        # naively wrapping again yields ****X**** (4 asterisks) which a
+        # MarkdownV2 platform renders as bold "X" plus a literal "**".
+        # Detect pre-bolded headings and skip the extra wrap.
+        if heading.startswith("**") and heading.endswith("**") and len(heading) >= 4:
+            group_lines = [heading, *bullets]
         rendered_groups.append("\n".join(group_lines))
 
     return "\n\n".join(rendered_groups)
