@@ -295,9 +295,11 @@ def redact_phone(phone: str) -> str:
 
 
 # ─── GFM Markdown Table → Bullet Conversion ─────────────────────────────────
-# Shared by Discord and Telegram adapters.  Discord calls
-# convert_table_to_bullets() directly; Telegram imports the primitives
-# but keeps its own MarkdownV2-aware renderer.
+# Shared by Discord and Telegram adapters.  Both call
+# convert_table_to_bullets() directly — Telegram imports it as
+# _wrap_markdown_tables (adapter.py:453) and Discord calls it directly.
+# There is NO separate Telegram renderer; fixing this one function closes
+# both platforms.
 
 
 # Matches a GFM table delimiter row: optional outer pipes, cells of dashes
@@ -330,8 +332,9 @@ def split_markdown_table_row(line: str) -> list[str]:
 def _render_table_block(table_block: list[str]) -> str:
     """Render a detected GFM table as bold-heading + bullet groups.
 
-    Uses the same alignment logic as Telegram's renderer: for non-row-label
-    tables, ``data_cells = cells`` (the full row) and the bullet whose value
+    This is the single renderer for both Discord and Telegram (Telegram
+    imports it as ``_wrap_markdown_tables``). For non-row-label tables,
+    ``data_cells = cells`` (the full row) and the bullet whose value
     duplicates the heading is skipped.  This keeps header→value alignment
     correct.
     """
@@ -370,17 +373,15 @@ def _render_table_block(table_block: list[str]) -> str:
                 continue
             bullets.append(f"• {header}: {value}")
 
-        # If the heading cell already carries its own **bold** markers
-        # (e.g. a markdown table whose first cell was written as **X** or
-        # **X** with trailing text), naively wrapping again yields ****X****
-        # (4 asterisks) which a MarkdownV2 platform renders as bold "X" plus
-        # a literal "**". Detect ANY existing bold marker in the heading and
-        # skip the extra wrap — a heading that already contains "**" is
-        # already bolded (fully or partially) and must not be re-wrapped.
-        if "**" in heading:
-            group_lines = [heading, *bullets]
-        else:
-            group_lines = [f"**{heading}**", *bullets]
+        # Normalize the heading so it is ALWAYS a clean, fully-bolded label.
+        # A heading cell may already carry its own **bold** markers (e.g.
+        # "**X**" or "**X** (trailing text)"). Naively wrapping again yields
+        # ****X**** (4 asterisks) which a MarkdownV2 platform renders as bold
+        # "X" plus a literal "**". Stripping every "**" and re-wrapping once
+        # guarantees an even count of asterisks, keeps the heading bold, and
+        # also closes the unbalanced-marker case ("**Alice" -> "**Alice**").
+        core = heading.replace("**", "").strip()
+        group_lines = [f"**{core}**", *bullets] if core else [heading, *bullets]
         rendered_groups.append("\n".join(group_lines))
 
     return "\n\n".join(rendered_groups)

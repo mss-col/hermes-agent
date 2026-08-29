@@ -67,4 +67,58 @@ class TestConvertTableToBullets:
         assert "• head1: a" not in out
         assert "• head2: b" in out
 
+    def test_heading_already_bold_no_double_star(self):
+        # Regression: a heading cell written as **X** must not be wrapped
+        # again into ****X**** (4 asterisks) — Telegram renders that as bold
+        # "X" plus a literal "**".
+        text = (
+            "| h1 | h2 |\n"
+            "|---|---|\n"
+            "| **Alice** | 150 |"
+        )
+        out = convert_table_to_bullets(text)
+        assert "****" not in out
+        assert "**Alice**" in out
+        assert "• h2: 150" in out
+
+    def test_heading_bold_with_trailing_text_no_double_star(self):
+        # Regression: **X** (trailing text) starts with ** but does not end
+        # with **. The first fix only guarded fully-bold headings, so this
+        # case was still wrapped again -> ****X** (text)**. Must stay clean.
+        text = (
+            "| Ujian | Status |\n"
+            "|---|---|\n"
+            "| **typecheck** (patch preflight) | LULUS |"
+        )
+        out = convert_table_to_bullets(text)
+        assert "****" not in out
+        assert "**typecheck (patch preflight)**" in out
+        assert "• Status: LULUS" in out
+
+    def test_heading_unbalanced_bold_marker(self):
+        # Regression: an unbalanced "**Alice" must not leak a literal "**".
+        # Normalizing strips the marker and re-wraps once -> "**Alice**".
+        text = (
+            "| h1 | h2 |\n"
+            "|---|---|\n"
+            "| **Alice | 150 |"
+        )
+        out = convert_table_to_bullets(text)
+        assert "****" not in out
+        assert "**Alice**" in out
+        assert "• h2: 150" in out
+
+    def test_heading_partial_bold_normalized(self):
+        # A heading with bold in the middle ("Cost **high** risk") is
+        # normalized to a single fully-bold label, never double-wrapped.
+        text = (
+            "| h1 | h2 |\n"
+            "|---|---|\n"
+            "| Cost **high** risk | 150 |"
+        )
+        out = convert_table_to_bullets(text)
+        assert "****" not in out
+        assert "**Cost high risk**" in out
+        assert "• h2: 150" in out
+
 
