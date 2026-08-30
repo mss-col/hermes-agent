@@ -48,9 +48,31 @@ git push fork local/patches:main
 
 **Semak patch double-star masih relevan** (upstream mungkin sudah fix):
 ```bash
-git show origin/main:gateway/platforms/helpers.py | grep -c "startswith(\"\*\*\")"
+git show origin/main:gateway/platforms/helpers.py | grep -c "heading.replace\|startswith(\"\*\*\")"
 # 0 = upstream belum fix → patch kita perlu kekal
 ```
+*Nota (Lyra verify 2026-08-30): logik double-star kini `core = heading.replace("**","")`
+di `helpers.py:383` (commit 951af290, ganti pendekatan `startswith` lama a2abf891).*
+*Jangan semak `"already carried"` — bukan marker patch kita.*
+
+## Desktop self-update & branch runtime (PENTING — disahkan 2026-08-30 Una+Lyra)
+
+Desktop "Update now" lari `hermes update --branch <config>`. Branch config dalam
+`~/Library/Application Support/Hermes/updates.json` — tiada fail = **default `main`**.
+
+**JANGAN biarkan desktop switch ke `main`** — itu akan bawa checkout keluar dari
+`local/patches` dan patch kita padam dari runtime (walaupun kekal di git). Punca
+sebenar diselesaikan di `~/.hermes/config.yaml`:
+
+```yaml
+updates:
+  parked_branch_strategy: update_in_place   # dulu: switch
+```
+
+`update_in_place` = checkout TIDAK berganjak; `origin/main` di-merge MASUK ke
+branch aktif (fast-forward jika boleh, tag `pre-update-<stamp>` + konflik berhenti
+bersih). Jangan set branch desktop ke `local/patches` — upstream tak wujud ref itu,
+`resolveHealedBranch` akan tulis balik `main`.
 
 ## Ujian (selepas sync)
 
