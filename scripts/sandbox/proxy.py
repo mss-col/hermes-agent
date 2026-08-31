@@ -176,20 +176,23 @@ def handle_connect(conn, target):
     cert, key = cert_for(host)
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.load_cert_chain(cert, key)
-    with context.wrap_socket(conn, server_side=True) as tls:
-        nested = read_request(tls)
-        if not nested:
-            return
-        line = nested.split(b'\r\n', 1)[0].decode('iso-8859-1')
-        nested_target = line.split(' ', 2)[1]
-        found = file_for(host, nested_target)
-        if found is not None:
-            respond_fixture(tls, found)
-        else:
-            try:
-                forward_https(tls, host, port, nested)
-            except Exception as error:
-                raise RuntimeError(f'{host} https-upstream: {error!r}') from error
+    try:
+        with context.wrap_socket(conn, server_side=True) as tls:
+            nested = read_request(tls)
+            if not nested:
+                return
+            line = nested.split(b'\r\n', 1)[0].decode('iso-8859-1')
+            nested_target = line.split(' ', 2)[1]
+            found = file_for(host, nested_target)
+            if found is not None:
+                respond_fixture(tls, found)
+            else:
+                try:
+                    forward_https(tls, host, port, nested)
+                except Exception as error:
+                    raise RuntimeError(f'{host} https-upstream: {error!r}') from error
+    except Exception as error:
+        raise RuntimeError(f'{host} tls-handshake: {error!r}') from error
 
 
 def host_from_headers(request):
@@ -230,7 +233,7 @@ def handle(conn):
         # "registry.npmjs.org, http-forward" vs "https-upstream" point at
         # different sides of the MITM. Without this, 44 identical SSLEOFError
         # lines give no hint whether npm or the upstream died.
-        print(f'proxy request failed: {error}', file=sys.stderr, flush=True)
+        print(f'proxy request failed: {error!r}', file=sys.stderr, flush=True)
 
 
 def main():

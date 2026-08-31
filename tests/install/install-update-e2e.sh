@@ -120,7 +120,7 @@ collect_sandbox_logs() {
     mkdir -p "$dest/npm-logs"
     cp -a "$npm_logs/." "$dest/npm-logs/" 2>/dev/null || true
     local newest
-    newest="$(ls -t "$npm_logs/"*-debug-0.log 2>/dev/null | head -1)"
+    newest="$(ls -t "$npm_logs/"*-debug-0.log 2>/dev/null | head -1 || true)"
     if [ -n "$newest" ]; then
       echo "--- npm debug log ($(basename "$newest")) ---" >&2
       cat "$newest" >&2
