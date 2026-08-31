@@ -186,7 +186,10 @@ def handle_connect(conn, target):
         if found is not None:
             respond_fixture(tls, found)
         else:
-            forward_https(tls, host, port, nested)
+            try:
+                forward_https(tls, host, port, nested)
+            except Exception as error:
+                raise RuntimeError(f'{host} https-upstream: {error!r}') from error
 
 
 def host_from_headers(request):
@@ -213,14 +216,21 @@ def handle_request(conn):
         if found is not None:
             respond_fixture(conn, found)
         else:
-            forward_http(conn, host, parsed.port or 80, request, target)
+            try:
+                forward_http(conn, host, parsed.port or 80, request, target)
+            except Exception as error:
+                raise RuntimeError(f'{host} http-forward: {error!r}') from error
 
 
 def handle(conn):
     try:
         handle_request(conn)
     except Exception as error:
-        print(f'proxy request failed: {error!r}', file=sys.stderr, flush=True)
+        # Include host + stage so a wall of identical errors is diagnosable:
+        # "registry.npmjs.org, http-forward" vs "https-upstream" point at
+        # different sides of the MITM. Without this, 44 identical SSLEOFError
+        # lines give no hint whether npm or the upstream died.
+        print(f'proxy request failed: {error}', file=sys.stderr, flush=True)
 
 
 def main():

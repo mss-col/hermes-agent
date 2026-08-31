@@ -2471,6 +2471,13 @@ install_node_deps() {
                 log_error "npm output:"
                 cat "$npm_log" >&2
             fi
+            # npm --silent suppresses npm ERR!; the real error is in the debug log
+            local npm_debug
+            npm_debug="$(ls -t "$HOME/.npm/_logs/"*-debug-0.log 2>/dev/null | head -1)"
+            if [ -n "$npm_debug" ]; then
+                log_error "npm debug log ($npm_debug):"
+                cat "$npm_debug" >&2
+            fi
             rm -f "$npm_log"
             restore_dirty_lockfiles "$INSTALL_DIR"
             return 1
@@ -2586,6 +2593,13 @@ install_node_deps() {
             if [ -s "$tui_npm_log" ]; then
                 log_error "npm output:"
                 cat "$tui_npm_log" >&2
+            fi
+            # npm --silent suppresses npm ERR!; the real error is in the debug log
+            local tui_npm_debug
+            tui_npm_debug="$(ls -t "$HOME/.npm/_logs/"*-debug-0.log 2>/dev/null | head -1)"
+            if [ -n "$tui_npm_debug" ]; then
+                log_error "npm debug log ($tui_npm_debug):"
+                cat "$tui_npm_debug" >&2
             fi
             rm -f "$tui_npm_log"
             restore_dirty_lockfiles "$INSTALL_DIR"

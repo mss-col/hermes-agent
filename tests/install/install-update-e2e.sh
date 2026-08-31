@@ -112,6 +112,21 @@ collect_sandbox_logs() {
     cat "$dest/proxy.log" >&2
     echo "--- end proxy.log ---" >&2
   fi
+  # npm --silent suppresses npm ERR!; the real error lives in ~/.npm/_logs.
+  # Collect it so a failed npm install is diagnosable from the job log, not
+  # just the artifact. (npm runs as the sandbox user, HOME=$DEV_SANDBOX_HOME.)
+  local npm_logs="$SANDBOX_ROOT/home/.npm/_logs"
+  if [ -d "$npm_logs" ]; then
+    mkdir -p "$dest/npm-logs"
+    cp -a "$npm_logs/." "$dest/npm-logs/" 2>/dev/null || true
+    local newest
+    newest="$(ls -t "$npm_logs/"*-debug-0.log 2>/dev/null | head -1)"
+    if [ -n "$newest" ]; then
+      echo "--- npm debug log ($(basename "$newest")) ---" >&2
+      cat "$newest" >&2
+      echo "--- end npm debug log ---" >&2
+    fi
+  fi
 }
 
 # ── preflight ──────────────────────────────────────────────────────────────
