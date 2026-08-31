@@ -34,7 +34,7 @@ def probe(db_path: str) -> str:
     try:
         conn = sqlite3.connect(f"{p.as_uri()}?mode=ro", uri=True, timeout=5)
         rows = [str(r[0]) for r in conn.execute("PRAGMA integrity_check")]
-    except sqlite3.OperationalError as exc:
+    except sqlite3.DatabaseError as exc:
         return f"UNVERIFIED: read-only open failed: {exc}"
     finally:
         if conn is not None:
