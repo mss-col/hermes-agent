@@ -181,14 +181,23 @@ def handle_connect(conn, target):
     except Exception as error:
         raise RuntimeError(f'{host} tls-handshake: {error!r}') from error
     with tls:
-        nested = read_request(tls)
+        try:
+            nested = read_request(tls)
+        except Exception as error:
+            raise RuntimeError(f'{host} read-request: {error!r}') from error
         if not nested:
             return
-        line = nested.split(b'\r\n', 1)[0].decode('iso-8859-1')
-        nested_target = line.split(' ', 2)[1]
+        try:
+            line = nested.split(b'\r\n', 1)[0].decode('iso-8859-1')
+            nested_target = line.split(' ', 2)[1]
+        except Exception as error:
+            raise RuntimeError(f'{host} parse-request: {error!r}') from error
         found = file_for(host, nested_target)
         if found is not None:
-            respond_fixture(tls, found)
+            try:
+                respond_fixture(tls, found)
+            except Exception as error:
+                raise RuntimeError(f'{host} serve-fixture: {error!r}') from error
         else:
             try:
                 forward_https(tls, host, port, nested)
