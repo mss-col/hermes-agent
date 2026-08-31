@@ -177,22 +177,23 @@ def handle_connect(conn, target):
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.load_cert_chain(cert, key)
     try:
-        with context.wrap_socket(conn, server_side=True) as tls:
-            nested = read_request(tls)
-            if not nested:
-                return
-            line = nested.split(b'\r\n', 1)[0].decode('iso-8859-1')
-            nested_target = line.split(' ', 2)[1]
-            found = file_for(host, nested_target)
-            if found is not None:
-                respond_fixture(tls, found)
-            else:
-                try:
-                    forward_https(tls, host, port, nested)
-                except Exception as error:
-                    raise RuntimeError(f'{host} https-upstream: {error!r}') from error
+        tls = context.wrap_socket(conn, server_side=True)
     except Exception as error:
         raise RuntimeError(f'{host} tls-handshake: {error!r}') from error
+    with tls:
+        nested = read_request(tls)
+        if not nested:
+            return
+        line = nested.split(b'\r\n', 1)[0].decode('iso-8859-1')
+        nested_target = line.split(' ', 2)[1]
+        found = file_for(host, nested_target)
+        if found is not None:
+            respond_fixture(tls, found)
+        else:
+            try:
+                forward_https(tls, host, port, nested)
+            except Exception as error:
+                raise RuntimeError(f'{host} https-upstream: {error!r}') from error
 
 
 def host_from_headers(request):
