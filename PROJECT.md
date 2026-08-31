@@ -21,11 +21,18 @@
 
 ## Patch tempatan kita (WAJIB kekal)
 
-| Patch | Fail | Status upstream |
-|---|---|---|
-| **double-star table render** | `gateway/platforms/helpers.py` (`_render_table_block`) | ❌ Belum masuk upstream — **perlu kekal** |
-| **preflight state.db probe** | `apps/desktop/electron/main.ts` | ❌ Belum masuk upstream — **perlu kekal** |
-| ~~nanoid bump~~ | `package.json` | ✅ **Sudah diganti upstream** (3.3.18) — jangan bawa lagi |
+| Patch | Fail | Status upstream | Semak relevan (0 = belum fix → perlu kekal) |
+|---|---|---|---|
+| **double-star table render** | `gateway/platforms/helpers.py` (`_render_table_block`) | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:gateway/platforms/helpers.py \| grep -c 'heading.replace'` |
+| **preflight state.db probe** | `apps/desktop/electron/main.ts` | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:apps/desktop/electron/main.ts \| grep -c "Checking the local database before continuing"` |
+| **sandbox CA fix (npm SSLEOFError)** | `scripts/sandbox/stage2-run.sh` | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:scripts/sandbox/stage2-run.sh \| grep -c "NODE_EXTRA_CA_CERTS /work/certs/ca.pem"` |
+| **db_probe catch DatabaseError** | `scripts/db_integrity_probe.py` | ❌ Fail tak wujud di upstream — **perlu kekal** | `git cat-file -e origin/main:scripts/db_integrity_probe.py` (gagal = belum wujud) |
+| **npm debug log on failure** | `scripts/install.sh` | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:scripts/install.sh \| grep -c "npm debug log"` |
+| **proxy host+stage tags** | `scripts/sandbox/proxy.py` | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:scripts/sandbox/proxy.py \| grep -c "read-request\|parse-request\|serve-fixture\|https-upstream\|tls-handshake"` |
+| **collect npm logs in E2E** | `tests/install/install-update-e2e.sh` | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:tests/install/install-update-e2e.sh \| grep -c "npm-logs"` |
+| ~~nanoid bump~~ | `package.json` | ✅ **Sudah diganti upstream** (3.3.18) — jangan bawa lagi | — |
+
+**Cara semak setiap patch masih relevan** (sebelum setiap sync): jalankan arahan "Semak relevan" di atas. Jika output ≥1, upstream sudah fix → **buang patch kita** (jangan bawa lagi di cycle seterusnya). Jika 0, patch kita perlu kekal.
 
 ## Cara sync dengan upstream (PENTING)
 
