@@ -659,14 +659,36 @@ def _empty_record() -> Dict[str, Any]:
 
 
 def load_usage() -> Dict[str, Dict[str, Any]]:
-    """Read the entire .usage.json map. Returns empty dict on missing/corrupt."""
+    """Read the entire .usage.json map. Returns empty dict on missing/corrupt.
+
+    On a corrupt file, the original is preserved to a timestamped backup
+    (``.usage.json.corrupt-<ts>``) and a WARNING is logged, so a silent
+    data-loss event (all records wiped by a later writer) is recoverable
+    and visible instead of vanishing without a trace.
+    """
     path = _usage_file()
     if not path.exists():
         return {}
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as e:
-        logger.debug("Failed to read %s: %s", path, e)
+        # Preserve the corrupt original before returning {} — otherwise the
+        # next writer saves only its own record and every other record
+        # (pins, provenance, counters) is lost silently.
+        try:
+            backup = path.with_name(
+                f".usage.json.corrupt-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+            )
+            path.replace(backup)
+            logger.warning(
+                "skill_usage.load_usage: %s corrupt (%s); original preserved to %s",
+                path, e, backup,
+            )
+        except OSError as be:
+            logger.warning(
+                "skill_usage.load_usage: %s corrupt (%s) AND backup failed (%s)",
+                path, e, be,
+            )
         return {}
     if not isinstance(data, dict):
         return {}
