@@ -4462,16 +4462,9 @@ async function preflightStateDb(hermesHome, rememberLog, updateRoot) {
       const ts = new Date().toISOString().replace(/[:.]/g, '-')
 
       const integritySuffix =
-        integrityVerdict === 'ok'
-          ? ''
-          : integrityVerdict === 'corrupt'
-            ? '.CORRUPT'
-            : '.UNVERIFIED'
+        integrityVerdict === 'ok' ? '' : integrityVerdict === 'corrupt' ? '.CORRUPT' : '.UNVERIFIED'
 
-      const emergencyPath = path.join(
-        hermesHome,
-        `state.db.pre-update-emergency-${ts}${integritySuffix}.bak`
-      )
+      const emergencyPath = path.join(hermesHome, `state.db.pre-update-emergency-${ts}${integritySuffix}.bak`)
 
       try {
         fs.copyFileSync(stateDbPath, emergencyPath)
