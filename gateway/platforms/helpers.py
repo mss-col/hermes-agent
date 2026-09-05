@@ -130,8 +130,9 @@ def redact_phone(phone: str) -> str:
     return phone[:4] + "****" + phone[-4:]
 
 
-# ─── GFM table → bullets. Discord calls convert_table_to_bullets(); Telegram imports the
-# primitives but keeps its own MarkdownV2-aware renderer.
+# ─── GFM table → bullets. Discord calls convert_table_to_bullets() directly;
+# Telegram imports it as _wrap_markdown_tables (adapter.py:288). There is NO
+# separate Telegram renderer; fixing this one function closes both platforms.
 # Delimiter row: optional outer pipes, dash cells (optional alignment colons). Requires at
 # least one internal '|' so a lone '---' rule is NOT matched.
 TABLE_SEPARATOR_RE = re.compile(r'^\s*\|?\s*:?-+:?\s*(?:\|\s*:?-+:?\s*){1,}\|?\s*$')
