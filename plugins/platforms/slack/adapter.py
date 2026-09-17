@@ -34,6 +34,7 @@ sys.path.insert(0, str(_Path(__file__).resolve().parents[3]))
 
 from agent.retry_utils import parse_retry_after_seconds
 from agent.secret_scope import get_secret
+from agent.markdown_tables import split_table_row
 from gateway.config import Platform, PlatformConfig
 from gateway.platforms._shared import (
     apply_yaml_bridge as _apply_yaml_bridge, env_is_connected as _env_is_connected,
@@ -176,11 +177,13 @@ def _pad(cell: str, width: int) -> str:
 
 
 def _split_table_row(line: str) -> List[str]:
-    """Split a ``| a | b | c |`` row into trimmed cells (outer pipes optional)."""
-    s = line.strip()
-    s = s[1:] if s.startswith("|") else s
-    s = s[:-1] if s.endswith("|") else s
-    return [c.strip() for c in s.split("|")]
+    """Split a ``| a | b | c |`` row into trimmed cells (outer pipes optional).
+
+    Splits only on unescaped pipes: GFM treats ``\\|`` as a literal pipe inside a
+    cell, so a naive ``split("|")`` invents phantom columns (and unbalanced code
+    spans) — the same defect fixed in ``agent.markdown_tables.split_table_row``.
+    """
+    return split_table_row(line)
 
 
 def _align_table(rows: List[str]) -> List[str]:

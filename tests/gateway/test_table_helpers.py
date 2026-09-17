@@ -121,4 +121,23 @@ class TestConvertTableToBullets:
         assert "**Cost high risk**" in out
         assert "• h2: 150" in out
 
+    def test_escaped_pipe_in_cell_keeps_column_count(self):
+        # Regression (2026-09-17): a cell containing a GFM-escaped pipe
+        # (``git add -A \|\| true``) was split into extra columns. The phantom
+        # cells unbalanced the backticks, and the resulting code span swallowed
+        # the rest of the message — Telegram then showed raw ``**bold**`` markers.
+        text = (
+            "| Kod | Penemuan | Pembetulan |\n"
+            "|---|---|---|\n"
+            "| B10 | `git add -A \\|\\| true` telan ralat | `git add` per-fail |\n"
+            "\n"
+            "**§3(a) gerbang identiti** — dilaksana\n"
+        )
+        out = convert_table_to_bullets(text)
+        # The escaped pipes stay inside their cell; only the real delimiters split.
+        assert "`git add -A \\|\\| true` telan ralat" in out
+        assert out.count("`") % 2 == 0, "code spans must stay balanced"
+        # And the heading cell still renders as one bullet, not several.
+        assert "• Pembetulan: `git add` per-fail" in out
+
 

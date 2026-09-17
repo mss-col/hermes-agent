@@ -43,6 +43,33 @@ def test_split_strips_outer_pipes_and_trims():
     assert split_table_row("a | b | c") == ["a", "b", "c"]
 
 
+def test_split_respects_escaped_pipes_inside_cells():
+    """A GFM ``\\|`` is a literal pipe inside a cell, not a column break.
+
+    Regression: splitting on every pipe turned ``| B10 | `git add -A \\|\\| true` | x |``
+    into 5 cells with two unbalanced backticks. Downstream, the odd backtick count opened a
+    code span that swallowed the rest of the message, so bold markers like
+    ``**§3(a) …**`` reached Telegram literally instead of as bold.
+    """
+    row = r"| B10 | `git add -A \|\| true` telan ralat | `git add` per-fail |"
+    cells = split_table_row(row)
+    assert cells == ["B10", r"`git add -A \|\| true` telan ralat", "`git add` per-fail"], cells
+    # Every cell stays code-span balanced — the property that actually broke.
+    assert all(c.count("`") % 2 == 0 for c in cells)
+
+
+def test_split_escaped_pipe_not_treated_as_outer_pipe():
+    """A trailing escaped pipe is cell content, so it must not be stripped as a delimiter."""
+    cells = split_table_row(r"| a | b \|")
+    assert cells == ["a", r"b \|"], cells
+
+
+def test_split_even_backslashes_before_pipe_still_delimits():
+    """``\\\\|`` is an escaped backslash then a real delimiter, not an escaped pipe."""
+    cells = split_table_row(r"| a \\ | b |")
+    assert cells == [r"a \\", "b"], cells
+
+
 
 
 def test_looks_like_table_row():

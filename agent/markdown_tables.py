@@ -23,14 +23,53 @@ _DIVIDER_CELL_RE = re.compile(r"^\s*:?-{3,}:?\s*$")
 _MIN_COL_WIDTH = 3  # matches the divider's minimum dash run.
 
 
+def _is_escaped(row: str, index: int) -> bool:
+    """True when ``row[index]`` is preceded by an odd run of backslashes (GFM escape)."""
+    backslashes = 0
+    i = index - 1
+    while i >= 0 and row[i] == "\\":
+        backslashes += 1
+        i -= 1
+    return backslashes % 2 == 1
+
+
+def _split_unescaped_pipes(row: str) -> List[str]:
+    """Split on ``|`` that is NOT escaped. A GFM ``\\|`` is a literal pipe inside a cell, so
+    splitting on it invents phantom columns and corrupts every downstream consumer (a cell like
+    ``\\`git add -A \\|\\| true\\`` became 3 cells with unbalanced backticks, which swallowed the
+    rest of the message into a code span)."""
+    cells: List[str] = []
+    buf: List[str] = []
+    for i, ch in enumerate(row):
+        if ch == "|" and not _is_escaped(row, i):
+            cells.append("".join(buf))
+            buf = []
+            continue
+        buf.append(ch)
+    cells.append("".join(buf))
+    return cells
+
+
 def _disp_width(s: str) -> int:
     """``wcswidth`` clamped to >= 0 (it returns -1 for control/unknown sequences)."""
     return max(wcswidth(s), 0)
 
 
 def split_table_row(row: str) -> List[str]:
-    """Split ``| a | b | c |`` into ``["a", "b", "c"]`` with trims."""
-    return [c.strip() for c in row.strip().removeprefix("|").removesuffix("|").split("|")]
+    """Split ``| a | b | c |`` into ``["a", "b", "c"]`` with trims.
+
+    Splits only on pipes that are not backslash-escaped: GFM treats ``\\|`` as a
+    literal pipe inside a cell (including inside code spans), so a naive
+    ``split("|")`` invents phantom columns and derails every downstream consumer.
+    """
+    body = row.strip()
+    cells = _split_unescaped_pipes(body)
+    # Drop the empty edge fields produced by the optional outer pipes.
+    if cells and not cells[0].strip() and body.startswith("|"):
+        cells = cells[1:]
+    if cells and not cells[-1].strip() and body.endswith("|") and not _is_escaped(body, len(body) - 1):
+        cells = cells[:-1]
+    return [c.strip() for c in cells]
 
 
 def is_table_divider(row: str) -> bool:
