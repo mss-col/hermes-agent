@@ -4620,16 +4620,9 @@ async function preflightStateDb(hermesHome, rememberLog, updateRoot) {
       const ts = new Date().toISOString().replace(/[:.]/g, '-')
 
       const integritySuffix =
-        integrityVerdict === 'ok'
-          ? ''
-          : integrityVerdict === 'corrupt'
-            ? '.CORRUPT'
-            : '.UNVERIFIED'
+        integrityVerdict === 'ok' ? '' : integrityVerdict === 'corrupt' ? '.CORRUPT' : '.UNVERIFIED'
 
-      const emergencyPath = path.join(
-        hermesHome,
-        `state.db.pre-update-emergency-${ts}${integritySuffix}.bak`
-      )
+      const emergencyPath = path.join(hermesHome, `state.db.pre-update-emergency-${ts}${integritySuffix}.bak`)
 
       try {
         fs.copyFileSync(stateDbPath, emergencyPath)
@@ -10207,9 +10200,11 @@ async function buildRemoteConnection(
 }
 
 const sshConnections = new Map<string, any>()
+
 const sshIsolatedKeepalives = createSshIsolatedKeepaliveRegistry({
   log: chunk => sshRememberLog(chunk)
 })
+
 const desktopInstallationId = loadOrCreateInstallationId(DESKTOP_INSTALLATION_PATH)
 
 // Managed SSH update lifecycle (#93042): while an update owns a registered
