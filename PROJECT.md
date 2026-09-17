@@ -29,6 +29,7 @@
 | **npm debug log on failure** | `scripts/install.sh` (2 tapak: `install_node_deps` + TUI) | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:scripts/install.sh \| grep -c "npm debug log"` |
 | **backup corrupt `.usage.json`** | `tools/skill_usage.py` (`load_usage`) | ❌ Belum masuk upstream (masih `logger.debug` + `return {}` senyap) — **perlu kekal** | `git show origin/main:tools/skill_usage.py \| grep -c "usage.json.corrupt"` |
 | **ujian regresi double-star** | `tests/gateway/test_table_helpers.py` (4 ujian `no_double_star`) | ❌ Tiada di upstream — **perlu kekal** | `git show origin/main:tests/gateway/test_table_helpers.py \| grep -c "no_double_star"` |
+| **pipe GFM escaped dalam sel** | `agent/markdown_tables.py` (`split_table_row`) + `plugins/platforms/slack/adapter.py` | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:agent/markdown_tables.py \| grep -c "_split_unescaped_pipes"` |
 | **inventori patch (fail ini)** | `PROJECT.md` | — (dokumen kita) | — |
 | ~~sandbox CA fix (npm SSLEOFError)~~ | `scripts/sandbox/stage2-run.sh` | ✅ **Sandbox diretire upstream** (@ ea4cd375f8) — fail dipadam, jangan bawa lagi | — |
 | ~~proxy host+stage tags~~ | `scripts/sandbox/proxy.py` | ✅ **Sandbox diretire upstream** (@ ea4cd375f8) — fail dipadam, jangan bawa lagi | — |
