@@ -92,6 +92,50 @@ def test_load_usage_handles_corrupt_file(skills_home):
     assert load_usage() == {}
 
 
+def test_load_usage_preserves_corrupt_file_before_returning_empty(skills_home):
+    """A corrupt .usage.json must be backed up, not silently discarded.
+
+    Regression for the local patch in tools/skill_usage.py: returning {} alone
+    let the next writer save only its own record, wiping every other record
+    (pins, provenance, counters) with no trace. The original must survive to
+    ``.usage.json.corrupt-<ts>`` so the loss is recoverable.
+    """
+    from tools.skill_usage import load_usage, _usage_file
+    usage = _usage_file()
+    original = "{ not json — corrupted by an interrupted write }"
+    usage.write_text(original, encoding="utf-8")
+
+    assert load_usage() == {}
+
+    backups = sorted(usage.parent.glob(".usage.json.corrupt-*"))
+    assert len(backups) == 1, f"expected exactly one backup, got {backups}"
+    assert backups[0].read_text(encoding="utf-8") == original
+    assert not usage.exists(), "corrupt file must be moved aside, not left to be clobbered"
+
+
+def test_load_usage_corrupt_logs_warning_not_debug(skills_home, caplog):
+    """A corrupt .usage.json must be LOUD (WARNING + backup), never a silent debug.
+
+    Discriminating guard for the local patch: upstream logs at ``debug`` and
+    returns {} with no backup, so this test fails if the patch is dropped.
+    """
+    import logging
+
+    from tools.skill_usage import load_usage, _usage_file
+    usage = _usage_file()
+    usage.write_text("{ not json }", encoding="utf-8")
+    caplog.clear()
+
+    with caplog.at_level(logging.DEBUG, logger="tools.skill_usage"):
+        assert load_usage() == {}
+
+    warnings = [r for r in caplog.records if r.levelno >= logging.WARNING]
+    assert warnings, "corrupt .usage.json must log at WARNING level, not debug"
+    assert sorted(usage.parent.glob(".usage.json.corrupt-*")), (
+        "corrupt .usage.json must be preserved before any writer can clobber it"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Counter bumps
 # ---------------------------------------------------------------------------

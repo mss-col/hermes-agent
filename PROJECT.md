@@ -23,14 +23,21 @@
 
 | Patch | Fail | Status upstream | Semak relevan (0 = belum fix → perlu kekal) |
 |---|---|---|---|
-| **double-star table render** | `gateway/platforms/helpers.py` (`_render_table_block`) | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:gateway/platforms/helpers.py \| grep -c 'heading.replace'` |
+| **double-star table render** | `gateway/platforms/helpers.py` (`_render_table_block`, ~baris 202) | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:gateway/platforms/helpers.py \| grep -c 'heading.replace'` |
 | **preflight state.db probe** | `apps/desktop/electron/main.ts` | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:apps/desktop/electron/main.ts \| grep -c "Checking the local database before continuing"` |
 | **db_probe catch DatabaseError** | `scripts/db_integrity_probe.py` | ❌ Fail tak wujud di upstream — **perlu kekal** | `git cat-file -e origin/main:scripts/db_integrity_probe.py` (gagal = belum wujud) |
-| **npm debug log on failure** | `scripts/install.sh` | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:scripts/install.sh \| grep -c "npm debug log"` |
+| **npm debug log on failure** | `scripts/install.sh` (2 tapak: `install_node_deps` + TUI) | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:scripts/install.sh \| grep -c "npm debug log"` |
+| **backup corrupt `.usage.json`** | `tools/skill_usage.py` (`load_usage`) | ❌ Belum masuk upstream (masih `logger.debug` + `return {}` senyap) — **perlu kekal** | `git show origin/main:tools/skill_usage.py \| grep -c "usage.json.corrupt"` |
+| **ujian regresi double-star** | `tests/gateway/test_table_helpers.py` (4 ujian `no_double_star`) | ❌ Tiada di upstream — **perlu kekal** | `git show origin/main:tests/gateway/test_table_helpers.py \| grep -c "no_double_star"` |
+| **inventori patch (fail ini)** | `PROJECT.md` | — (dokumen kita) | — |
 | ~~sandbox CA fix (npm SSLEOFError)~~ | `scripts/sandbox/stage2-run.sh` | ✅ **Sandbox diretire upstream** (@ ea4cd375f8) — fail dipadam, jangan bawa lagi | — |
 | ~~proxy host+stage tags~~ | `scripts/sandbox/proxy.py` | ✅ **Sandbox diretire upstream** (@ ea4cd375f8) — fail dipadam, jangan bawa lagi | — |
 | ~~collect npm logs in E2E~~ | `tests/install/install-update-e2e.sh` | ✅ **Sandbox diretire upstream** (@ ea4cd375f8) — fail dipadam, jangan bawa lagi | — |
 | ~~nanoid bump~~ | `package.json` | ✅ **Sudah diganti upstream** (3.3.18) — jangan bawa lagi | — |
+
+⚠ **Setiap patch AKTIF di atas mesti ada barisnya di sini.** Sebelum ini jadual senarai 4 sahaja
+daripada 7 — `tools/skill_usage.py` langsung tiada sebutan, jadi patch itu boleh tercicir pada
+sync seterusnya tanpa sesiapa perasan (temuan Lyra verify 2026-09-17).
 
 **Cara semak setiap patch masih relevan** (sebelum setiap sync): jalankan arahan "Semak relevan" di atas. Jika output ≥1, upstream sudah fix → **buang patch kita** (jangan bawa lagi di cycle seterusnya). Jika 0, patch kita perlu kekal.
 
@@ -58,8 +65,9 @@ git push fork local/patches:main
 git show origin/main:gateway/platforms/helpers.py | grep -c "heading.replace\|startswith(\"\*\*\")"
 # 0 = upstream belum fix → patch kita perlu kekal
 ```
-*Nota (Lyra verify 2026-08-30): logik double-star kini `core = heading.replace("**","")`
-di `helpers.py:383` (commit 951af290, ganti pendekatan `startswith` lama a2abf891).*
+*Nota (Lyra verify 2026-09-17): logik double-star kini `core = heading.replace("**","")`
+di `helpers.py:202` (commit 951af290, ganti pendekatan `startswith` lama a2abf891).
+Fail `helpers.py` 642 baris — rujukan lama `:383` sudah lapuk.*
 *Jangan semak `"already carried"` — bukan marker patch kita.*
 
 ## Desktop self-update & branch runtime (PENTING — disahkan 2026-08-30 Una+Lyra)
