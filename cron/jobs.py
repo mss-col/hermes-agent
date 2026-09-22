@@ -892,7 +892,16 @@ _persisted_error_recoveries: int = 0
 _TELEMETRY_RECENT_HISTORY = 20
 # A fire_claim younger than this is a live run (heartbeat cadence is 60 s). One value
 # for claiming, one-shot re-arm, and stale-error recovery so they cannot disagree.
-FIRE_CLAIM_TTL_SECONDS = 300
+#
+# PATCH LOKAL (Una, 2026-09-22): 300 -> 1800. Reason: the watchdog timeout is an
+# INACTIVITY limit (HERMES_CRON_TIMEOUT, default 600s), not a wall-clock cap, so a healthy
+# run may legitimately exceed 300s of wall clock while polling an external tool for approval.
+# Measured on this host: 3 of 18 runs of a 5-minute monitor job took 13.3/21.2/23.8 min; each
+# one lost ownership and the next tick re-anchored on the run's END, leaving 19-29 min
+# unmonitored. 1800 matches ONESHOT_RUN_CLAIM_TTL_SECONDS above (17 lines down) for the same
+# reason. Raising this does NOT delay reclaim of a dead owner: _claim_owner_is_dead() releases
+# the claim immediately when the claiming pid is gone, so the TTL only covers unprovable cases.
+FIRE_CLAIM_TTL_SECONDS = 1800
 _persisted_error_recoveries_recent: list = []
 
 

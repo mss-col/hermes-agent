@@ -144,7 +144,11 @@ def test_reclaimed_fire_uses_new_owner_token(temp_home, monkeypatch):
     monkeypatch.setattr(
         jobs,
         "_hermes_now",
-        lambda: original_at + timedelta(seconds=301),
+        # PATCH LOKAL (Una, 2026-09-22): was a hardcoded timedelta(seconds=301), which
+        # encoded the old FIRE_CLAIM_TTL_SECONDS=300. The intent is "just past the TTL",
+        # so derive it from the constant — same pattern as
+        # tests/cron/test_recurring_persisted_error_recovery.py:191.
+        lambda: original_at + timedelta(seconds=jobs.FIRE_CLAIM_TTL_SECONDS + 1),
     )
 
     assert jobs.claim_job_for_fire(job["id"]) is True
