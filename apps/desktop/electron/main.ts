@@ -4738,7 +4738,7 @@ async function preflightStateDb(hermesHome, rememberLog, updateRoot) {
       let integrityProblem = 'not-run'
 
       try {
-        const pythonBin = findPythonForRoot(updateRoot)
+        const pythonBin = await findPythonForRoot(updateRoot)
         const probeScript = path.join(updateRoot, 'scripts', 'db_integrity_probe.py')
 
         if (pythonBin && fileExists(probeScript)) {

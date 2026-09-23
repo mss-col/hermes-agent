@@ -30,6 +30,7 @@
 | **backup corrupt `.usage.json`** | `tools/skill_usage.py` (`load_usage`) | ❌ Belum masuk upstream (masih `logger.debug` + `return {}` senyap) — **perlu kekal** | `git show origin/main:tools/skill_usage.py \| grep -c "usage.json.corrupt"` |
 | **ujian regresi double-star** | `tests/gateway/test_table_helpers.py` (4 ujian `no_double_star`) | ❌ Tiada di upstream — **perlu kekal** | `git show origin/main:tests/gateway/test_table_helpers.py \| grep -c "no_double_star"` |
 | **pipe GFM escaped dalam sel** | `agent/markdown_tables.py` (`split_table_row`) + `plugins/platforms/slack/adapter.py` | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:agent/markdown_tables.py \| grep -c "_split_unescaped_pipes"` |
+| **FIRE_CLAIM_TTL 300 → 1800** | `cron/constants.py` (pindah dari `cron/jobs.py` pada v0.21.4) | ❌ Nilai upstream masih 300 — **perlu kekal** | `git show origin/main:cron/constants.py \| grep -c "^FIRE_CLAIM_TTL_SECONDS = 1800$"` |
 | **inventori patch (fail ini)** | `PROJECT.md` | — (dokumen kita) | — |
 | ~~sandbox CA fix (npm SSLEOFError)~~ | `scripts/sandbox/stage2-run.sh` | ✅ **Sandbox diretire upstream** (@ ea4cd375f8) — fail dipadam, jangan bawa lagi | — |
 | ~~proxy host+stage tags~~ | `scripts/sandbox/proxy.py` | ✅ **Sandbox diretire upstream** (@ ea4cd375f8) — fail dipadam, jangan bawa lagi | — |
@@ -53,13 +54,17 @@ git fetch origin
 git checkout -b sync-test local/patches
 git merge origin/main
 # Selesaikan konflik (package-lock paling mungkin — nanoid)
-# SAHKAN patch kita kekal:
-grep -c "already carried\|extra wrap" gateway/platforms/helpers.py   # ≥1
-grep -c "preflightStateDb" apps/desktop/electron/main.ts             # ≥1
+# SAHKAN patch kita kekal (penanda DISKRIMINATIF — 0 di upstream, ≥1 di kita):
+grep -c 'heading.replace' gateway/platforms/helpers.py                      # ≥1
+grep -c "Checking the local database before continuing" apps/desktop/electron/main.ts  # ≥1
+grep -c '^FIRE_CLAIM_TTL_SECONDS = 1800$' cron/constants.py                 # 1
 # Bila bersih, apply ke local/patches + push fork
 git checkout local/patches && git merge sync-test
 git push fork local/patches:main
 ```
+
+⚠ **Jangan semak `"already carried"`** (marker LAPUK, bukan patch kita) dan jangan semak
+`preflightStateDb` (kod UPSTREAM — 3 padanan di kedua-dua belah, hijau-palsu).
 
 **Semak patch double-star masih relevan** (upstream mungkin sudah fix):
 ```bash
