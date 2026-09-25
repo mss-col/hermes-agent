@@ -31,6 +31,7 @@
 | **ujian regresi double-star** | `tests/gateway/test_table_helpers.py` (4 ujian `no_double_star`) | ❌ Tiada di upstream — **perlu kekal** | `git show origin/main:tests/gateway/test_table_helpers.py \| grep -c "no_double_star"` |
 | **pipe GFM escaped dalam sel** | `agent/markdown_tables.py` (`split_table_row`) + `plugins/platforms/slack/adapter.py` | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:agent/markdown_tables.py \| grep -c "_split_unescaped_pipes"` |
 | **FIRE_CLAIM_TTL 300 → 1800** | `cron/constants.py` (pindah dari `cron/jobs.py` pada v0.21.4) | ❌ Nilai upstream masih 300 — **perlu kekal** | `git show origin/main:cron/constants.py \| grep -c "^FIRE_CLAIM_TTL_SECONDS = 1800$"` |
+| **done-column sort koersi** | `plugins/kanban/dashboard/plugin_api.py` (`_completed_at_sort_value`) | ❌ Belum masuk upstream (kunci masih `-(completed_at or 0)`) — **perlu kekal** | `git show origin/main:plugins/kanban/dashboard/plugin_api.py \| grep -c "_completed_at_sort_value"` |
 | **inventori patch (fail ini)** | `PROJECT.md` | — (dokumen kita) | — |
 | ~~sandbox CA fix (npm SSLEOFError)~~ | `scripts/sandbox/stage2-run.sh` | ✅ **Sandbox diretire upstream** (@ ea4cd375f8) — fail dipadam, jangan bawa lagi | — |
 | ~~proxy host+stage tags~~ | `scripts/sandbox/proxy.py` | ✅ **Sandbox diretire upstream** (@ ea4cd375f8) — fail dipadam, jangan bawa lagi | — |
