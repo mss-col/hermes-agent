@@ -171,6 +171,27 @@ BOARD_COLUMNS: list[str] = ["triage", "todo", "scheduled", "ready", "running", "
 _CARD_SUMMARY_PREVIEW_CHARS = 200
 
 
+def _completed_at_sort_value(completed_at: Any) -> int:
+    """Coerce ``completed_at`` to an int for the done-column sort.
+
+    The column is normally a unix timestamp int, but legacy rows can hold an
+    ISO/text value; those rows sorted here as 0 and the comparison raised
+    ``TypeError``, which broke the whole board response.
+    """
+    if completed_at is None:
+        return 0
+    if isinstance(completed_at, bool):
+        return int(completed_at)
+    if isinstance(completed_at, (int, float)):
+        return int(completed_at)
+    if isinstance(completed_at, str):
+        try:
+            return int(float(completed_at))
+        except (TypeError, ValueError):
+            return 0
+    return 0
+
+
 def _task_dict(task: kanban_db.Task, *, latest_summary: Optional[str] = None) -> dict[str, Any]:
     d = asdict(task)
     # Derived age metrics so the UI can colour stale cards without client deltas.
@@ -310,7 +331,7 @@ def get_board(
         # history, so order it newest-completed-first. Two stable sorts compose
         # into the "completed_at DESC NULLS LAST, id DESC" SQL key.
         columns["done"].sort(key=lambda d: d["id"], reverse=True)
-        columns["done"].sort(key=lambda d: (d["completed_at"] is None, -(d["completed_at"] or 0)))
+        columns["done"].sort(key=lambda d: (d["completed_at"] is None, -_completed_at_sort_value(d["completed_at"])))
 
         # Queue columns keep list_tasks' dispatch order (priority DESC, created_at ASC).
         tenants = [r["tenant"] for r in conn.execute("SELECT DISTINCT tenant FROM tasks WHERE tenant IS NOT NULL ORDER BY tenant")]
