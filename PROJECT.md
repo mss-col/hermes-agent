@@ -115,3 +115,32 @@ Patch Python tidak aktif sehingga gateway restart (kod dimuat dalam memori). Res
 ```bash
 hermes gateway restart
 ```
+
+⚠ **SELEPAS SETIAP SYNC UPSTREAM — PASANG SEMULA EDITABLE INSTALL, kalau tidak GATEWAY MATI.**
+
+Upstream boleh menambah **pakej Python baharu** (v0.21.5 menambah `hermes_platform`). Venv
+menyimpan editable install **lama**; finder-nya hanya tahu pakej yang wujud masa ia dijana:
+
+```bash
+# gejala
+ModuleNotFoundError: No module named 'hermes_platform'   # gateway exit 1, launchd tak revive
+grep -c hermes_platform venv/lib/python*/site-packages/__editable___hermes_agent_*_finder.py  # 0 = basi
+
+# pembetulan (punca, bukan workaround)
+export UV_CACHE_DIR=/tmp/una-uv-cache
+uv pip install --python venv/bin/python -e . --no-deps -q
+ls venv/lib/python*/site-packages/ | grep -E '__editable__.hermes_agent-'   # versi mesti == pyproject
+```
+
+**Cara sahkan gateway SEBENAR hidup** — jangan percaya `launchctl print` sahaja, ia boleh
+laporkan `state = running` untuk proses `osascript` yang hidup **tanpa anak**:
+
+```bash
+pgrep -f 'hermes_cli.main gateway run'    # (kosong = gateway TIDAK jalan)
+stat -f '%Sm' ~/.hermes/logs/gateway.log  # mtime beku = tidak hidup
+tail -20 ~/.hermes/logs/gateway.log | grep 'Gateway running'   # patut ada "Gateway running with N platform(s)"
+```
+
+Ralat sebenar paling pantas dilihat dengan menjalankan gateway di latar depan
+(`perl -e 'alarm 25; exec @ARGV' -- venv/bin/python -m hermes_cli.main gateway run --force` —
+macOS tiada `timeout`).
