@@ -24,9 +24,9 @@
 | Patch | Fail | Status upstream | Semak relevan (0 = belum fix → perlu kekal) |
 |---|---|---|---|
 | **double-star table render** | `gateway/platforms/helpers.py` (`_render_table_block`, ~baris 202) | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:gateway/platforms/helpers.py \| grep -c 'heading.replace'` |
-| **preflight state.db probe** | `apps/desktop/electron/main.ts` | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:apps/desktop/electron/main.ts \| grep -c "Checking the local database before continuing"` |
-| **db_probe catch DatabaseError** | `scripts/db_integrity_probe.py` | ❌ Fail tak wujud di upstream — **perlu kekal** | `git cat-file -e origin/main:scripts/db_integrity_probe.py` (gagal = belum wujud) |
-| **npm debug log on failure** | `scripts/install.sh` (2 tapak: `install_node_deps` + TUI) | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:scripts/install.sh \| grep -c "npm debug log"` |
+| ~~preflight state.db probe~~ | `apps/desktop/electron/main.ts` | ✅ **Diatasi upstream v0.21.6** (`updater/state-db-preflight.ts` + `hermes_cli/backup_sqlite.py`: WAL-safe snapshot + `PRAGMA quick_check`, throw = update dibatalkan — lebih kuat daripada patch kita) — jangan bawa lagi | — |
+| ~~db_probe catch DatabaseError~~ | `scripts/db_integrity_probe.py` | ✅ **Dibuang pada sync v0.21.6** — preflight upstream meliputi integrity check; fail tiada lagi rujukan kod | — |
+| ~~npm debug log on failure~~ | `scripts/install.sh` (2 tapak: `install_node_deps` + TUI) | ✅ **Diatasi upstream v0.21.6** — installer difaktorkan ke `scripts/build/node-deps.mjs` (`--logs-dir` khusus + `stdio: 'inherit'`) | — |
 | **backup corrupt `.usage.json`** | `tools/skill_usage.py` (`load_usage`) | ❌ Belum masuk upstream (masih `logger.debug` + `return {}` senyap) — **perlu kekal** | `git show origin/main:tools/skill_usage.py \| grep -c "usage.json.corrupt"` |
 | **ujian regresi double-star** | `tests/gateway/test_table_helpers.py` (4 ujian `no_double_star`) | ❌ Tiada di upstream — **perlu kekal** | `git show origin/main:tests/gateway/test_table_helpers.py \| grep -c "no_double_star"` |
 | **pipe GFM escaped dalam sel** | `agent/markdown_tables.py` (`split_table_row`) + `plugins/platforms/slack/adapter.py` | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:agent/markdown_tables.py \| grep -c "_split_unescaped_pipes"` |
@@ -57,15 +57,17 @@ git merge origin/main
 # Selesaikan konflik (package-lock paling mungkin — nanoid)
 # SAHKAN patch kita kekal (penanda DISKRIMINATIF — 0 di upstream, ≥1 di kita):
 grep -c 'heading.replace' gateway/platforms/helpers.py                      # ≥1
-grep -c "Checking the local database before continuing" apps/desktop/electron/main.ts  # ≥1
+grep -c "usage.json.corrupt" tools/skill_usage.py                           # ≥1
+grep -c '_completed_at_sort_value' plugins/kanban/dashboard/plugin_api.py   # ≥2
 grep -c '^FIRE_CLAIM_TTL_SECONDS = 1800$' cron/constants.py                 # 1
 # Bila bersih, apply ke local/patches + push fork
 git checkout local/patches && git merge sync-test
 git push fork local/patches:main
 ```
 
-⚠ **Jangan semak `"already carried"`** (marker LAPUK, bukan patch kita) dan jangan semak
-`preflightStateDb` (kod UPSTREAM — 3 padanan di kedua-dua belah, hijau-palsu).
+⚠ **Jangan semak `"already carried"`** (marker LAPUK, bukan patch kita). Penanda preflight
+lama (`"Checking the local database…"`) juga LAPUK — patch itu diatasi upstream v0.21.6
+(lihat jadual). `preflightStateDb` kini kod UPSTREAM, bukan penanda patch kita.
 
 **Semak patch double-star masih relevan** (upstream mungkin sudah fix):
 ```bash
