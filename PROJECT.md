@@ -23,7 +23,7 @@
 
 | Patch | Fail | Status upstream | Semak relevan (0 = belum fix → perlu kekal) |
 |---|---|---|---|
-| **double-star table render** | `gateway/platforms/helpers.py` (`_render_table_block`, ~baris 202) | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:gateway/platforms/helpers.py \| grep -c 'heading.replace'` |
+| **double-star table render** | `gateway/platforms/helpers.py` (`_render_table_block`, ~baris 326) | ❌ Belum masuk upstream — **perlu kekal** | `git show origin/main:gateway/platforms/helpers.py \| grep -c 'heading.replace'` |
 | ~~preflight state.db probe~~ | `apps/desktop/electron/main.ts` | ✅ **Diatasi upstream v0.21.6** (`updater/state-db-preflight.ts` + `hermes_cli/backup_sqlite.py`: WAL-safe snapshot + `PRAGMA quick_check`, throw = update dibatalkan). Nota: `quick_check` lebih lemah daripada `integrity_check` lama kita, tetapi polisi gagal-ditutup mengimbangi; porting = tulis semula (modul berpindah) | — |
 | ~~db_probe catch DatabaseError~~ | `scripts/db_integrity_probe.py` | ✅ **Dibuang pada sync v0.21.6** — preflight upstream meliputi integrity check; fail tiada lagi rujukan kod | — |
 | ~~npm debug log on failure~~ | `scripts/install.sh` (2 tapak: `install_node_deps` + TUI) | ✅ **Diatasi upstream v0.21.6** — installer difaktorkan ke `scripts/build/node-deps.mjs`: tiada `--silent` lagi, `stdio: 'inherit'` + tail `pm/progress.py:run_contained` tunjuk ralat npm; `--logs-dir` hanya untuk deteksi ENOTEMPTY | — |
@@ -74,9 +74,9 @@ lama (`"Checking the local database…"`) juga LAPUK — patch itu diatasi upstr
 git show origin/main:gateway/platforms/helpers.py | grep -c "heading.replace\|startswith(\"\*\*\")"
 # 0 = upstream belum fix → patch kita perlu kekal
 ```
-*Nota (Lyra verify 2026-09-17): logik double-star kini `core = heading.replace("**","")`
-di `helpers.py:202` (commit 951af290, ganti pendekatan `startswith` lama a2abf891).
-Fail `helpers.py` 642 baris — rujukan lama `:383` sudah lapuk.*
+*Nota (Lyra verify 2026-09-17, dikemas kini sync v0.22.2 2026-10-18): logik double-star
+kini `core = heading.replace("**","")` di `helpers.py:326` (rujukan `:202`/`:383` lapuk —
+fail dibariskan semula setiap sync; sahkan semula setiap kali).*
 *Jangan semak `"already carried"` — bukan marker patch kita.*
 
 ## Desktop self-update & branch runtime (PENTING — disahkan 2026-08-30 Una+Lyra)
